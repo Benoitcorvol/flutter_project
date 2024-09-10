@@ -7,8 +7,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'features/home/presentation/bloc/home_bloc.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
-import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
+import 'features/auth/presentation/pages/login_page.dart'; // Add this import
 import 'injection_container.dart' as di;
 
 class MyApp extends StatelessWidget {
@@ -17,11 +18,14 @@ class MyApp extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		print('Building MyApp');
-		return MultiBlocProvider(
-			providers: [
-				BlocProvider(create: (_) => di.sl<HomeBloc>()),
-				BlocProvider(create: (_) => di.sl<AuthBloc>()),
-			],
+		return BlocProvider(
+			create: (context) => AuthBloc(
+				authRepository: AuthRepositoryImpl(
+					remoteDataSource: AuthRemoteDataSourceImpl(
+						supabaseClient: Supabase.instance.client,
+					),
+				),
+			),
 			child: MaterialApp(
 				title: 'Collab App',
 				theme: ThemeData(

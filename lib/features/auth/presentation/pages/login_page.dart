@@ -19,6 +19,55 @@ class _LoginPageState extends State<LoginPage> {
   final ageController = TextEditingController();
   bool isSignUp = false;
 
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final forgotPasswordEmailController = TextEditingController();
+        return AlertDialog(
+          title: Text('Forgot Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Enter your email address to reset your password.'),
+              SizedBox(height: 16),
+              TextField(
+                controller: forgotPasswordEmailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final email = forgotPasswordEmailController.text.trim();
+                if (email.isNotEmpty) {
+                  print('Forgot password button clicked for email: $email'); // Debug print
+                  context.read<AuthBloc>().add(ForgotPasswordRequested(email));
+                  Navigator.pop(dialogContext);
+                } else {
+                  print('Forgot password attempted with empty email'); // Debug print
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Please enter your email'), backgroundColor: Colors.red),
+                  );
+                }
+              },
+              child: Text('Reset Password'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,15 +77,21 @@ class _LoginPageState extends State<LoginPage> {
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
+          print('Current AuthState: $state'); // Debug print
           if (state is AuthSuccess) {
-            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+            if (state.user != null) {
+              print('Login/Signup successful. Navigating to HomePage.'); // Debug print
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+            } else {
+              print('Password reset email sent successfully.'); // Debug print
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Password reset email sent. Please check your inbox.'), backgroundColor: Colors.green),
+              );
+            }
           } else if (state is AuthFailure) {
+            print('Authentication failed: ${state.error}'); // Debug print
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.error),
-                backgroundColor: Colors.red,
-                duration: Duration(seconds: 5),
-              ),
+              SnackBar(content: Text(state.error), backgroundColor: Colors.red, duration: Duration(seconds: 5)),
             );
           }
         },
@@ -81,6 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                               final password = passwordController.text.trim();
                               if (email.isNotEmpty && password.isNotEmpty) {
                                 if (isSignUp) {
+                                  print('Sign up button clicked'); // Debug print
                                   final name = nameController.text.trim();
                                   final age = int.tryParse(ageController.text.trim());
                                   context.read<AuthBloc>().add(SignupRequested(
@@ -89,9 +145,11 @@ class _LoginPageState extends State<LoginPage> {
                                     {'name': name, 'age': age},
                                   ));
                                 } else {
+                                  print('Login button clicked'); // Debug print
                                   context.read<AuthBloc>().add(LoginRequested(email, password));
                                 }
                               } else {
+                                print('Login/Signup attempted with empty fields'); // Debug print
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.orange),
                                 );
@@ -112,9 +170,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     if (!isSignUp)
                       TextButton(
-                        onPressed: () {
-                          // Navigate to PasswordRecoveryPage
-                        },
+                        onPressed: _showForgotPasswordDialog,
                         child: Text('Forgot password?'),
                       ),
                   ],

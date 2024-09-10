@@ -13,6 +13,7 @@ abstract class AuthRemoteDataSource {
   Future<UserResponse> updateUser(Map<String, dynamic> attributes);
   Future<void> logout();
   Future<void> createFakeUsers();
+  Future<void> forgotPassword(String email);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -179,5 +180,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // Add a delay between sign-up attempts to avoid rate limiting
       await Future.delayed(Duration(seconds: 2));
     }
+  }
+
+  @override
+  Future<void> forgotPassword(String email) async {
+    print('Calling Supabase resetPasswordForEmail for email: $email'); // Debug print
+    await supabaseClient.auth.resetPasswordForEmail(email);
+    print('Supabase resetPasswordForEmail call completed'); // Debug print
   }
 }

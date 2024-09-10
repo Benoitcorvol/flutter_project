@@ -68,6 +68,12 @@ class UpdateUserRequested extends AuthEvent {
 
 class LogoutRequested extends AuthEvent {}
 
+class ForgotPasswordRequested extends AuthEvent {
+  final String email;
+
+  ForgotPasswordRequested(this.email);
+}
+
 // States
 abstract class AuthState {}
 
@@ -93,21 +99,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   AuthBloc({required this.authRepository}) : super(AuthInitial()) {
     on<LoginRequested>((event, emit) async {
+      print('LoginRequested event received'); // Debug print
       emit(AuthLoading());
       try {
         final authResponse = await authRepository.login(event.email, event.password);
+        print('Login successful'); // Debug print
         emit(AuthSuccess(user: authResponse.user));
       } catch (e) {
+        print('Login failed: $e'); // Debug print
         emit(AuthFailure(e.toString()));
       }
     });
 
     on<SignupRequested>((event, emit) async {
+      print('SignupRequested event received'); // Debug print
       emit(AuthLoading());
       try {
         final authResponse = await authRepository.signup(event.email, event.password, event.additionalInfo);
+        print('Signup successful'); // Debug print
         emit(AuthSuccess(user: authResponse.user));
       } catch (e) {
+        print('Signup failed: $e'); // Debug print
         emit(AuthFailure(e.toString()));
       }
     });
@@ -121,6 +133,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<PasswordRecoveryRequested>(_onPasswordRecoveryRequested);
     on<UpdateUserRequested>(_onUpdateUserRequested);
     on<LogoutRequested>(_onLogoutRequested);
+    on<ForgotPasswordRequested>(_onForgotPasswordRequested);
   }
 
   Future<void> _onLoginWithMagicLinkRequested(LoginWithMagicLinkRequested event, Emitter<AuthState> emit) async {
@@ -209,6 +222,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await authRepository.logout();
       emit(AuthInitial());
     } catch (e) {
+      emit(AuthFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onForgotPasswordRequested(ForgotPasswordRequested event, Emitter<AuthState> emit) async {
+    print('ForgotPasswordRequested event received for email: ${event.email}'); // Debug print
+    emit(AuthLoading());
+    try {
+      await authRepository.forgotPassword(event.email);
+      print('Password reset email sent successfully'); // Debug print
+      emit(AuthSuccess()); // Note: no user is passed here
+    } catch (e) {
+      print('Error sending password reset email: $e'); // Debug print
       emit(AuthFailure(e.toString()));
     }
   }

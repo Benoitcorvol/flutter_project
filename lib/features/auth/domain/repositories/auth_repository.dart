@@ -12,4 +12,5 @@ abstract class AuthRepository {
   Future<void> passwordRecovery(String email);
   Future<UserResponse> updateUser(Map<String, dynamic> attributes);
   Future<void> logout();
+  Future<void> forgotPassword(String email);
 }
